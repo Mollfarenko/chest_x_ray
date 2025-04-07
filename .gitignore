@@ -1,0 +1,26 @@
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+
+# Ignore data & models
+data/test/
+data/train/
+models/
+*.pt
+*.pth
+
+# Ignore environment
+.env/
+venv/
+*.egg-info/
+
+# Ignore Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Logs, reports
+logs/
+reports/figures/
+*.log
+
+# System files
+.DS_Store
