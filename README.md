@@ -15,7 +15,7 @@ This project uses deep learning to detect pneumonia from chest X-ray images. It 
 
 ## 📁 Project Structure
 ```bash
-chest_x_ray/
+chest_xray/
 │
 ├── data/
 │   ├── train/      # Dataset used for training the model
