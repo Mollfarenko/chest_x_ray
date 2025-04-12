@@ -2,7 +2,7 @@ import os
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-def get_dataloaders(data_dir, image_size=224, batch_size=32):
+def get_dataloaders(data_dir, image_size=128, batch_size=32):
     """
     Creates PyTorch dataloaders for train, validation, and test sets.
 
@@ -18,6 +18,7 @@ def get_dataloaders(data_dir, image_size=224, batch_size=32):
     # Define transform: Resize + Normalize pixel values to [0, 1]
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
+        transforms.Grayscale(num_output_channels=1),
         transforms.ToTensor(),  # Converts [0, 255] → [0.0, 1.0]
     ])
 
