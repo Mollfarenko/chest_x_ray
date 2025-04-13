@@ -2,7 +2,7 @@ import os
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-def get_dataloaders(data_dir, image_size=128, batch_size=32):
+def get_dataloaders(data_dir, image_size=128, batch_size=128, num_workers=12):
     """
     Creates PyTorch dataloaders for train, validation, and test sets.
 
@@ -30,7 +30,13 @@ def get_dataloaders(data_dir, image_size=128, batch_size=32):
 
     # Create loaders
     dataloaders = {
-        split: DataLoader(data[split], batch_size=batch_size, shuffle=(split == "train"))
+        split: DataLoader(
+            data[split],
+            batch_size=batch_size,
+            shuffle=(split == "train"),
+            num_workers=num_workers,
+            pin_memory=True  # Important for faster CPU → GPU transfer
+        )
         for split in ["train", "val", "test"]
     }
 

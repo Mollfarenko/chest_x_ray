@@ -5,45 +5,56 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 
-# Set up root path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from utils.dataloader import get_dataloaders
-from models.cnn_model import PneumoniaCNN
+def main():
+    # Set up root path
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-# Device config
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    from utils.dataloader import get_dataloaders
+    from models.cnn_model import PneumoniaCNN
 
-# Load data
-data_dir = "data"
-dataloaders = get_dataloaders(data_dir)
+    # Device config
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("🔥 Using device:", device)
+    if device.type == "cuda":
+        print("🧠 GPU name:", torch.cuda.get_device_name(0))
 
-# Model
-model = PneumoniaCNN()
-model.to(device)
+    # Load data
+    data_dir = "data"
+    dataloaders = get_dataloaders(data_dir)
 
-# Loss and optimizer
-criterion = nn.BCELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # Model
+    model = PneumoniaCNN()
+    model.to(device)
 
-# Training loop
-num_epochs = 10  # Start small while testing
+    # Loss and optimizer
+    criterion = nn.BCELoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-for epoch in range(num_epochs):
-    model.train()  # Set to training mode
-    running_loss = 0.0
+    # Training loop
+    num_epochs = 10  # Start small while testing
 
-    for features, labels in tqdm(dataloaders["train"], desc=f"Epoch {epoch+1}/{num_epochs}"):
-        features = features.to(device)
-        labels = labels.view(-1, 1).float().to(device)
+    for epoch in range(num_epochs):
+        model.train()  # Set to training mode
+        running_loss = 0.0
 
-        optimizer.zero_grad()
-        outputs = model(features)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
+        for features, labels in tqdm(dataloaders["train"], desc=f"Epoch {epoch+1}/{num_epochs}"):
+            features = features.to(device)
+            labels = labels.view(-1, 1).float().to(device)
 
-        running_loss += loss.item()
+            optimizer.zero_grad()
+            outputs = model(features)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
-    print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss:.4f}")
+            running_loss += loss.item()
 
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss:.4f}")
+
+    # Save only weights
+    torch.save(model.state_dict(), "models/pneumonia_cnn_weights.pth")
+    pass
+
+if __name__ == '__main__':
+    main()
