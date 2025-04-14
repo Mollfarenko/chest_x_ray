@@ -2,7 +2,7 @@ import os
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-def get_dataloaders(data_dir, image_size=128, batch_size=128, num_workers=12):
+def get_dataloaders(data_dir, image_size=224, batch_size=128, num_workers=16):
     """
     Creates PyTorch dataloaders for train, validation, and test sets.
 
@@ -40,4 +40,4 @@ def get_dataloaders(data_dir, image_size=128, batch_size=128, num_workers=12):
         for split in ["train", "val", "test"]
     }
 
-    return dataloaders
+    return dataloaders, batch_size, image_size

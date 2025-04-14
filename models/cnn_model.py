@@ -18,9 +18,9 @@ class PneumoniaCNN(nn.Module):
             nn.MaxPool2d(2, 2),
         )
 
-        self.fc_layer = nn.Sequential(
+        self.classifier_layer = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(128 * 16 * 16, 512),  # Assumes input images are resized to 128x128
+            nn.Linear(128 * 28 * 28, 512),  # Assumes input images are resized to 224x224
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(512, 1),  # Binary classification
@@ -29,5 +29,5 @@ class PneumoniaCNN(nn.Module):
 
     def forward(self, x):
         x = self.conv_layer(x)
-        x = self.fc_layer(x)
+        x = self.classifier_layer(x)
         return x
