@@ -6,6 +6,7 @@ __pycache__/
 data/test/
 data/train/
 *.pt
+*.pth
 
 # Ignore mlruns
 mlruns/
