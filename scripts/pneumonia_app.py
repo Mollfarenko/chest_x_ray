@@ -13,7 +13,7 @@ def load_model(model_path='models/pneumonia_cnn_weights.pth'):
     """ Load the trained model weights """
     device = torch.device("cpu")
     model = PneumoniaCNN()
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.to(device)
     model.eval()  # Set the model to evaluation mode
     return model, device

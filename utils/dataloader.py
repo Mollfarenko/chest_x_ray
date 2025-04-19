@@ -20,24 +20,37 @@ def get_dataloaders(data_dir, image_size=224, batch_size=128, num_workers=16):
         transforms.Resize((image_size, image_size)),
         transforms.Grayscale(num_output_channels=1),
         transforms.ToTensor(),  # Converts [0, 255] → [0.0, 1.0]
+        transforms.Normalize(mean=[0.5], std=[0.5])  # Normalizes to [-1, 1]
     ])
 
-    # Create datasets from folders
-    data = {
-        split: datasets.ImageFolder(os.path.join(data_dir, split), transform=transform)
-        for split in ["train", "val", "test"]
+    # Load full train set from folder
+    train_dataset_full = datasets.ImageFolder(os.path.join(data_dir, "train"), transform=transform)
+
+    # Split into train and validation subsets
+    val_size = int(len(train_dataset_full) * val_split)
+    train_size = len(train_dataset_full) - val_size
+    train_subset, val_subset = random_split(train_dataset_full, [train_size, val_size])
+
+    # Load test set
+    test_dataset = datasets.ImageFolder(os.path.join(data_dir, "test"), transform=transform)
+
+    # Create datasets dictionary (clear naming)
+    datasets_dict = {
+        "train": train_subset,
+        "val_split": val_subset,
+        "test": test_dataset
     }
 
     # Create loaders
     dataloaders = {
-        split: DataLoader(
-            data[split],
+        key: DataLoader(
+            dataset,
             batch_size=batch_size,
-            shuffle=(split == "train"),
+            shuffle=(key == "train"),
             num_workers=num_workers,
-            pin_memory=True  # Important for faster CPU → GPU transfer
+            pin_memory=True
         )
-        for split in ["train", "val", "test"]
+        for key, dataset in datasets_dict.items()
     }
 
     return dataloaders, batch_size, image_size
