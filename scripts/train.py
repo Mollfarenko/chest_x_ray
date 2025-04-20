@@ -1,85 +1,78 @@
-import sys
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+from sklearn.metrics import f1_score
 import mlflow
 import mlflow.pytorch
 
+from utils.dataloader import get_dataloaders
+from models.cnn_model import PneumoniaCNN
+from utils.save_results import save_training_results
+from utils.training_loop import train_model
+from utils.plots import plot_training_history
 
 def main():
-    # Set up root path
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-    from utils.dataloader import get_dataloaders
-    from models.cnn_model import PneumoniaCNN
-
-    # Device config
+    # Device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("Using device:", device)
-    if device.type == "cuda":
-        print("GPU name:", torch.cuda.get_device_name(0))
 
     # Load data
     data_dir = "data"
     dataloaders, batch_size, image_size = get_dataloaders(data_dir)
 
     # Model
-    model = PneumoniaCNN()
-    model.to(device)
+    model = PneumoniaCNN().to(device)
 
     # Loss and optimizer
     learning_rate = 0.001
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    # Training loop
-    num_epochs = 10  # Start small while testing
+    num_epochs = 25
+    patience = 5
 
-    mlflow.set_experiment("Pneumonia_CNN_Classification")
-    # Start MLflow run
-    with mlflow.start_run(run_name="Run_with_BS128_LR0.001_EP10"):
+    with mlflow.start_run(run_name="Pneumonia-CNN"):
+        model, history, final_metrics = train_model(model, dataloaders, criterion, optimizer, num_epochs, device, patience)
 
-        # Log parameters
-        mlflow.log_param("batch_size", batch_size)
-        mlflow.log_param("image_size", image_size)
+        save_training_results(
+            history=history,
+            final_metrics={
+                "val_acc": final_metrics["val_acc"],
+                "val_f1": final_metrics["val_f1"],
+                "model_state_dict": model.state_dict()
+            },
+            model_path="models/pneumonia_model.pth",
+            history_path="reports/training_history.json",
+            report_path="reports/final_metrics.txt"
+        )
+
+        # Log to MLflow
         mlflow.log_param("num_epochs", num_epochs)
-        mlflow.log_param("learning_rate", learning_rate)
+        mlflow.log_param("batch_size", dataloaders["train"].batch_size)
+        mlflow.log_param("optimizer", optimizer.__class__.__name__)
+        mlflow.log_param("learning_rate", optimizer.param_groups[0]['lr'])
+        mlflow.log_param("criterion", criterion.__class__.__name__)
+        mlflow.log_param("patience", patience)
+
+        mlflow.log_metric("val_accuracy", final_metrics["val_acc"])
+        mlflow.log_metric("val_f1_score", final_metrics["val_f1"])
+
+        mlflow.log_artifact("reports/training_history.json")
+        mlflow.log_artifact("reports/final_metrics.txt")
+
+        mlflow.pytorch.log_model(model, "model")
 
 
-        for epoch in range(num_epochs):
-            model.train()  # Set to training mode
-            running_loss = 0.0
+        # After training is complete
+        plot_training_history(
+            history_path="reports/training_history.json",
+            save_path="reports/training_plot.png"
+        )
 
-            for features, labels in tqdm(dataloaders["train"], desc=f"Epoch {epoch+1}/{num_epochs}"):
-                features = features.to(device)
-                labels = labels.view(-1, 1).float().to(device)
 
-                optimizer.zero_grad()
-                outputs = model(features)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-
-                running_loss += loss.item()
-
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss:.4f}")
-
-            avg_loss = running_loss / len(dataloaders["train"])
-            print(f"Epoch [{epoch+1}], Loss: {avg_loss:.4f}")
-
-            # Log metric for this epoch
-            mlflow.log_metric("train_loss", avg_loss, step=epoch)
-
-        # Save the model
-        mlflow.pytorch.log_model(model, "pneumonia_cnn_model")
-
-        # Save only weights
-        os.makedirs("models", exist_ok=True)
-        torch.save(model.state_dict(), "models/pneumonia_cnn_weights.pth")
-
-        pass
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

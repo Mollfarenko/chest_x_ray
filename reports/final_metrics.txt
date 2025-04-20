@@ -1,0 +1,3 @@
+Final Validation Metrics:
+Accuracy: 0.9827
+F1 Score: 0.9886

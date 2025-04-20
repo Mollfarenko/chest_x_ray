@@ -1,8 +1,8 @@
 import os
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import random_split, DataLoader
 
-def get_dataloaders(data_dir, image_size=224, batch_size=128, num_workers=16):
+def get_dataloaders(data_dir, image_size=224, batch_size=128, num_workers=4, val_split = 0.2):
     """
     Creates PyTorch dataloaders for train, validation, and test sets.
 
